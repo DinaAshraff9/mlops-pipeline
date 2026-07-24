@@ -1,0 +1,32 @@
+# ────────────────────────────────────────────────────────────
+# Trainer Image — runs training job
+# ────────────────────────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential gcc libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY api/requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --prefix=/install --no-cache-dir -r requirements.txt
+
+
+FROM python:3.11-slim AS runtime
+
+RUN groupadd -r trainer && useradd -r -g trainer trainer
+
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY model/ ./model/
+
+RUN mkdir -p /app/model/artifacts /app/data && \
+    chown -R trainer:trainer /app
+
+USER trainer
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+CMD ["python", "-m", "model.train"]

@@ -1,0 +1,67 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: "${SLACK_WEBHOOK_URL}"
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait:      30s
+  group_interval:  5m
+  repeat_interval: 12h
+  receiver: slack-critical
+
+  routes:
+    # Critical alerts → Slack + PagerDuty
+    - match:
+        severity: critical
+      receiver: slack-critical
+      continue: true
+
+    - match:
+        pagerduty: "true"
+      receiver: pagerduty
+      continue: false
+
+    # Warning alerts → Slack only
+    - match:
+        severity: warning
+      receiver: slack-warning
+
+receivers:
+  - name: slack-critical
+    slack_configs:
+      - channel: '#mlops-alerts-critical'
+        title: '🔴 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          *Severity:* {{ .Labels.severity }}
+          {{ end }}
+        send_resolved: true
+
+  - name: slack-warning
+    slack_configs:
+      - channel: '#mlops-alerts'
+        title: '⚠️  WARNING: {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+
+  - name: pagerduty
+    pagerduty_configs:
+      - service_key: "${PAGERDUTY_SERVICE_KEY}"
+        description: '{{ .CommonAnnotations.summary }}'
+
+inhibit_rules:
+  # Suppress warnings when critical is firing
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['alertname', 'cluster', 'service']

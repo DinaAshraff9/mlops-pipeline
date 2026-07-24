@@ -1,0 +1,17 @@
+services:
+  mlflow:
+    healthcheck:
+      disable: true
+
+  api:
+    depends_on:
+      mlflow:
+        condition: service_started
+
+  trainer:
+    depends_on:
+      mlflow:
+        condition: service_started
+    user: root
+    volumes:
+      - mlflow-data:/mlflow/artifacts

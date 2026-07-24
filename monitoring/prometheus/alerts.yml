@@ -1,0 +1,100 @@
+groups:
+  # ── Model Performance ─────────────────────────────────────
+  - name: model-performance
+    rules:
+      - alert: ModelAccuracyLow
+        expr: mlops_model_accuracy < 0.80
+        for: 5m
+        labels:
+          severity: critical
+          team: ml-ops
+        annotations:
+          summary: "Model accuracy dropped below threshold"
+          description: "Model accuracy is {{ $value | humanizePercentage }} (threshold: 80%)"
+          runbook: "https://wiki.company.com/runbooks/model-accuracy"
+
+      - alert: HighPredictionLatency
+        expr: histogram_quantile(0.95, rate(mlops_prediction_latency_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: ml-ops
+        annotations:
+          summary: "95th percentile prediction latency is high"
+          description: "P95 latency is {{ $value | humanizeDuration }}"
+
+      - alert: HighPredictionErrorRate
+        expr: |
+          rate(mlops_predictions_total{result="error"}[5m])
+          / rate(mlops_predictions_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prediction error rate above 5%"
+          description: "Error rate: {{ $value | humanizePercentage }}"
+
+  # ── Infrastructure ────────────────────────────────────────
+  - name: infrastructure
+    rules:
+      - alert: APIDown
+        expr: up{job="mlops-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          pagerduty: "true"
+        annotations:
+          summary: "MLOps API is down"
+          description: "The prediction API has been unreachable for more than 1 minute."
+
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="mlops-api"}[5m]) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on API"
+          description: "CPU usage: {{ $value }}%"
+
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="mlops-api"}
+          / (1024 * 1024 * 1024) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on API"
+          description: "Memory: {{ $value | humanize1024 }}B"
+
+      - alert: PodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total{namespace="mlops"}[15m]) * 60 > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod is crash-looping"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }}"
+
+  # ── Traffic ───────────────────────────────────────────────
+  - name: traffic
+    rules:
+      - alert: LowPredictionRate
+        expr: rate(mlops_predictions_total[10m]) < 0.01
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Very low prediction rate"
+          description: "Fewer than 0.01 predictions/sec — possible traffic issue."
+
+      - alert: HighRequestRate
+        expr: rate(mlops_predictions_total[1m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unusually high prediction request rate"
+          description: "{{ $value | humanize }} requests/sec"

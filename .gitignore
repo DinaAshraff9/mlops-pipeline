@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+.pytest_cache/
+.coverage
+coverage.xml
+
+# Data & Models (don't commit to git — use S3/DVC)
+data/*.csv
+model/artifacts/
+reports/
+
+# Environment
+.env
+*.env.production
+*.env.staging
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docker
+.docker/
