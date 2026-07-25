@@ -8,25 +8,23 @@
 ---
 
 ## 🏗️ Architecture
-
-```
 Code Push ──► GitHub Actions ──► Tests & Security Scan
-                    │
-                    ▼
-             Docker Build ──► ECR Push ──► Trivy Scan
-                    │
-                    ▼
-          Kubernetes (EKS) ──► Rolling Deploy ──► Smoke Tests
-                    │
-                    ▼
-     MLflow Tracking ◄──── Training Job (Optuna Tuning)
-                    │
-                    ▼
-    FastAPI Prediction API ──► Prometheus ──► Grafana
-                    │
-                    ▼
-        Evidently Drift Detection ──► Auto Retrain
-```
+│
+▼
+Docker Build ──► ECR Push ──► Trivy Scan
+│
+▼
+Kubernetes (EKS) ──► Rolling Deploy ──► Smoke Tests
+│
+▼
+MLflow Tracking ◄──── Training Job (Optuna Tuning)
+│
+▼
+FastAPI Prediction API ──► Prometheus ──► Grafana
+│
+▼
+Evidently Drift Detection ──► Auto Retrain
+
 
 ---
 
@@ -49,6 +47,96 @@ Code Push ──► GitHub Actions ──► Tests & Security Scan
 | Infrastructure | Terraform (IaC) |
 | Security | IRSA + Secrets Manager + Bandit |
 | API | FastAPI + Rate Limiting + Auth |
+
+---
+
+## 📸 Screenshots
+
+### 🔮 Prediction API (FastAPI / Swagger)
+
+<table>
+<tr>
+<td width="50%">
+
+**Batch Prediction Endpoint**
+![Predict Batch Endpoint](docs/screenshots/predict-batch-error.png)
+
+</td>
+<td width="50%">
+
+**Single Prediction — Successful Response**
+![Predict Success Response](docs/screenshots/predict-success-response.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Single Prediction Endpoint (Swagger UI)**
+![Predict Endpoint Swagger](docs/screenshots/predict-endpoint-swagger.png)
+
+</td>
+<td width="50%">
+
+</td>
+</tr>
+</table>
+
+### 📊 Grafana Monitoring Dashboard
+
+**MLOps Pipeline Dashboard** — real-time predictions/sec, P50/P95/P99 latency, model accuracy, and total predictions (24h):
+
+![MLOps Pipeline Dashboard](docs/screenshots/grafana-mlops-dashboard.png)
+
+<table>
+<tr>
+<td width="50%">
+
+**Grafana Home**
+![Grafana Home](docs/screenshots/grafana-home.png)
+
+</td>
+<td width="50%">
+
+**Dashboards Folder — MLOps**
+![Grafana Dashboards Folder](docs/screenshots/grafana-dashboards-folder.png)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Alerting Overview**
+![Grafana Alerting](docs/screenshots/grafana-alerting.png)
+
+</td>
+<td width="50%">
+
+**Data Sources — Prometheus Connected**
+![Grafana Data Sources](docs/screenshots/grafana-datasources.png)
+
+</td>
+</tr>
+</table>
+
+### 🔌 Connections Setup
+
+<table>
+<tr>
+<td width="50%">
+
+**Add New Connection**
+![Add New Connection](docs/screenshots/grafana-add-connection.png)
+
+</td>
+<td width="50%">
+
+**Add Data Source — Prometheus**
+![Add Data Source](docs/screenshots/grafana-add-datasource.png)
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -155,51 +243,52 @@ pytest tests/ -v --cov=api --cov=model
 
 ## 📁 Project Structure
 
-```
 mlops-pipeline/
-├── api/                    ← FastAPI prediction service
-│   ├── main.py
-│   └── requirements.txt
-├── model/                  ← Training & evaluation
-│   ├── train.py            ← Optuna + MLflow training
-│   └── evaluate.py         ← Drift detection (Evidently)
-├── docker/                 ← Docker configs
-│   ├── Dockerfile.api
-│   ├── Dockerfile.trainer
-│   └── docker-compose.yml
-├── k8s/                    ← Kubernetes manifests
-│   ├── namespace.yaml
-│   ├── api-deployment.yaml ← Rolling update + Ingress
-│   ├── hpa.yaml            ← Auto-scaling
-│   ├── mlflow-deployment.yaml
-│   ├── pvc.yaml
-│   └── secrets.yaml
-├── terraform/              ← AWS Infrastructure (IaC)
-│   ├── main.tf             ← EKS, ECR, RDS, S3, IAM
-│   ├── variables.tf
-│   └── outputs.tf
+├── api/ ← FastAPI prediction service
+│ ├── main.py
+│ └── requirements.txt
+├── model/ ← Training & evaluation
+│ ├── train.py ← Optuna + MLflow training
+│ └── evaluate.py ← Drift detection (Evidently)
+├── docker/ ← Docker configs
+│ ├── Dockerfile.api
+│ ├── Dockerfile.trainer
+│ └── docker-compose.yml
+├── k8s/ ← Kubernetes manifests
+│ ├── namespace.yaml
+│ ├── api-deployment.yaml ← Rolling update + Ingress
+│ ├── hpa.yaml ← Auto-scaling
+│ ├── mlflow-deployment.yaml
+│ ├── pvc.yaml
+│ └── secrets.yaml
+├── terraform/ ← AWS Infrastructure (IaC)
+│ ├── main.tf ← EKS, ECR, RDS, S3, IAM
+│ ├── variables.tf
+│ └── outputs.tf
 ├── monitoring/
-│   ├── prometheus/
-│   │   ├── prometheus.yml
-│   │   ├── alerts.yml      ← 10+ alert rules
-│   │   └── alertmanager.yml
-│   └── grafana/
-│       ├── dashboards/
-│       └── provisioning/
+│ ├── prometheus/
+│ │ ├── prometheus.yml
+│ │ ├── alerts.yml ← 10+ alert rules
+│ │ └── alertmanager.yml
+│ └── grafana/
+│ ├── dashboards/
+│ └── provisioning/
 ├── github-workflows/
-│   ├── ci-cd.yml           ← Full CI/CD pipeline
-│   └── drift-detection.yml ← Scheduled drift checks
+│ ├── ci-cd.yml ← Full CI/CD pipeline
+│ └── drift-detection.yml ← Scheduled drift checks
 ├── tests/
-│   ├── test_api.py
-│   └── test_model.py
+│ ├── test_api.py
+│ └── test_model.py
+├── docs/
+│ └── screenshots/ ← README screenshots (see above)
 ├── scripts/
-│   └── generate_sample_data.py
+│ └── generate_sample_data.py
 └── README.md
-```
+
 
 ---
 
-## 👤 Author
+## 👤 by Dina
 
 Built as a portfolio project showcasing Cloud + DevOps + MLOps expertise.
 
